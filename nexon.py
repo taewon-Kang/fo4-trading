@@ -24,7 +24,7 @@ for i in range(95, 120):
     for j in range(1, 9):
         data = {'n1Confederation': '0',
                 'n4LeagueId': '0',
-                "strSeason": ',216,217,218,262,236,254,233,231,237,246,249,253,251,252,256,261,264,265,101,214,207,206,202,201,258,259,240,241,210,225,234,294,247,297,510,508,300,257,507,260,250,',
+                "strSeason": ',216,217,218,262,236,254,233,231,237,246,249,253,251,252,256,261,264,265,101,214,207,206,202,201,258,259,240,241,210,225,234,294,247,297,510,508,300,257,507,260,250,278,279',
                 'n1LeftFootAblity': '0',
                 'n1RightFootAblity': '0',
                 'n1SkillMove': '0',
@@ -79,8 +79,8 @@ for i in range(95, 120):
             bpArray.append(int(bpList[k].text.replace(",", "")))
     bpArray.sort()
 
-    if len(bpArray) > 20:
-        bpDict[i] = int((sum(bpArray[:20]))*0.9/20)
+    if len(bpArray) > 25:
+        bpDict[i] = int((sum(bpArray[:25]))*0.94/25)
 
 
 desktop = os.path.expanduser('~')
