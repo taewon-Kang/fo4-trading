@@ -127,6 +127,8 @@ maxGrade = 4
 
 couponTh = 500000
 
+mode = 1
+
 
 def get_best_materials(target, target_grade):
     material_combinations = []
@@ -409,10 +411,34 @@ def calc_efficiency():
     print(str(startG) + " => " + str(endG) + " ===> 순이익 : " + str(int(maxEff)) + " 횟수 : " + str(howMuch))
 
 
+seed = 0
+strSeason = ['101']
+searchFee = 30
+
+SeasonDict = {
+    '101': 'ICON',
+    '278': '23 TOTY',
+    '279': '23 TOTY-N',
+    '272': 'BWC',
+    '273': 'WC22',
+    '268': 'LN',
+    '274': 'RMCF',
+    '258': '22 TOTY',
+    '259': '22 TOTY-N',
+    '267': '22 TOTS',
+    '280': '22 UCL'
+}
+searchMinOvr = 103
+searchMaxOvr = 200
 while True:
+    seasonString = []
+    for e in strSeason:
+        seasonString.append(SeasonDict[e])
     print("------------------------------------------------------------")
-    print("메뉴 [1]=강화데이 {0}, [2]=1카부터 {1}카까지 강화 계산기, [3]=재료 값 출력, [4]=재료 값 수정, [5]=최대 강화:{1}".format(
-        "ON/[OFF]" if burningDay == 1 else "[ON]/OFF", maxGrade))
+    print(
+        "메뉴 [1]=강화데이 {0}, [2]=1카부터 {1}카까지 강화 계산기, [3]=재료 값 출력, [4]=재료 값 수정, [5]=최대 강화:{1}, [6]=재료값 크롤링, [7]=매물 검색기, [8]=강화 시드:{2}, [9]=검색기 시즌 수정:{3}, [10]=수수료 수정:{4}, [11]=검색 오버롤 범위:{5}~{6}, [12]=모드 설정[{7}]".format(
+            "ON/[OFF]" if burningDay == 1 else "[ON]/OFF", maxGrade, seed, seasonString, searchFee, searchMinOvr,
+            searchMaxOvr, "NORMAL" if mode == 1 else "ONE"))
     choose = int(input())
 
     if choose == 1:
@@ -543,6 +569,17 @@ while True:
 
         endTime = time.time()
 
+        f = open(materialPath, 'r')
+
+        while True:
+            line = f.readline()
+            if not line:
+                break
+            split_line = line.split(': ')
+            prices[int(split_line[0])] = int(split_line[1])
+
+        f.close()
+
         print(f"{endTime - startTime:.5f} sec")
     elif choose == 7:
         url = "https://fifaonline4.nexon.com/datacenter/PlayerList"
@@ -551,76 +588,88 @@ while True:
 
         bpDict = {}
 
-        data = {'n1Confederation': '0',
-                'n4LeagueId': '0',
-                "strSeason": ',101,',  # 272 273 : BWC, WC22 278, 279: 23 TOTY
-                'n1LeftFootAblity': '0',
-                'n1RightFootAblity': '0',
-                'n1SkillMove': '0',
-                'n1InterationalRep': '0',
-                'n4BirthMonth': '0',
-                'n4BirthDay': '0',
-                'n4TeamId': '0',
-                'n4NationId': '0',
-                'n1Strong': '1',
-                'n1Grow': '0',
-                'n1TeamColor': '0',
-                'strSkill1': 'sprintspeed',
-                'strSkill2': 'acceleration',
-                'strSkill3': 'strength',
-                'strSkill4': 'stamina',
-                'strSearchStatus': 'off',
-                'strOrderby': 'n8playergrade1',
-                'teamcolorid': '0',
-                'n1History': '0',
-                'n4OvrMin': 0,
-                'n4OvrMax': 200,
-                'n4SalaryMin': '4',
-                'n4SalaryMax': '34',
-                'n8PlayerGrade1Min': '0',
-                'n8PlayerGrade1Max': '10000',
-                'n1Ability1Min': '40',
-                'n1Ability1Max': '150',
-                'n1Ability2Min': '40',
-                'n1Ability2Max': '150',
-                'n1Ability3Min': '40',
-                'n1Ability3Max': '150',
-                'n4BirthYearMin': '1900',
-                'n4BirthYearMax': '2010',
-                'n4HeightMin': '156',
-                'n4HeightMax': '208',
-                'n4WeightMin': '50',
-                'n4WeightMax': '110',
-                'n4AvgPointMin': '0',
-                'n4AvgPointMax': '10',
-                'n4PageNo': '1rd=0.8624194951185464'}
+        nameDict = {}
 
-        res = requests.post(url, data=data)
-        # soup 객체 만들기
-        soup = BeautifulSoup(res.text, "lxml")
-        ovrClass = re.compile('^skillData_')
-        ovrList = soup.find_all('span', {"class": ovrClass, "data-type": False})
-        tempOvrList = []
-        for e in ovrList:
-            if ' ' in e.get_text():
-                if e.get_text().replace(" ", ""):
-                    tempOvrList.append(e.get_text().replace(" ", "").replace("\r\n", ""))
+        tempFee = searchFee * 0.004 + 0.8
 
-        nameList = soup.find_all('div', {"class": "name"})
+        for e in strSeason:
+            convertedSeason = ','
+            convertedSeason = convertedSeason + e + ','
+            data = {'n1Confederation': '0',
+                    'n4LeagueId': '0',
+                    "strSeason": convertedSeason,  # 272 273 : BWC, WC22 278, 279: 23 TOTY, 274, 268: LN, RMF
+                    'n1LeftFootAblity': '0',
+                    'n1RightFootAblity': '0',
+                    'n1SkillMove': '0',
+                    'n1InterationalRep': '0',
+                    'n4BirthMonth': '0',
+                    'n4BirthDay': '0',
+                    'n4TeamId': '0',
+                    'n4NationId': '0',
+                    'n1Strong': '1',
+                    'n1Grow': '0',
+                    'n1TeamColor': '0',
+                    'strSkill1': 'sprintspeed',
+                    'strSkill2': 'acceleration',
+                    'strSkill3': 'strength',
+                    'strSkill4': 'stamina',
+                    'strSearchStatus': 'off',
+                    'strOrderby': 'n8playergrade1',
+                    'teamcolorid': '0',
+                    'n1History': '0',
+                    'n4OvrMin': searchMinOvr,
+                    'n4OvrMax': searchMaxOvr,
+                    'n4SalaryMin': '4',
+                    'n4SalaryMax': '34',
+                    'n8PlayerGrade1Min': '0',
+                    'n8PlayerGrade1Max': '10000',
+                    'n1Ability1Min': '40',
+                    'n1Ability1Max': '150',
+                    'n1Ability2Min': '40',
+                    'n1Ability2Max': '150',
+                    'n1Ability3Min': '40',
+                    'n1Ability3Max': '150',
+                    'n4BirthYearMin': '1900',
+                    'n4BirthYearMax': '2010',
+                    'n4HeightMin': '156',
+                    'n4HeightMax': '208',
+                    'n4WeightMin': '50',
+                    'n4WeightMax': '110',
+                    'n4AvgPointMin': '0',
+                    'n4AvgPointMax': '10',
+                    'n4PageNo': '1rd=0.8624194951185464'}
 
-        tempNameList = []
-        for e in nameList:
-            nameDict[e.get_text()] = []
-            tempNameList.append(e.get_text())
+            res = requests.post(url, data=data)
+            # soup 객체 만들기
+            soup = BeautifulSoup(res.text, "lxml")
+            ovrClass = re.compile('^skillData_')
+            ovrList = soup.find_all('span', {"class": ovrClass, "data-type": False})
+            tempOvrList = []
+            for e2 in ovrList:
+                if ' ' in e2.get_text():
+                    if e2.get_text().replace(" ", ""):
+                        tempOvrList.append(e2.get_text().replace(" ", "").replace("\r\n", ""))
 
-        for idx in range(len(tempOvrList)):
-            nameDict[tempNameList[idx]].append(tempOvrList[idx])
+            nameList = soup.find_all('div', {"class": "name"})
+            seasonList = soup.find_all('div', {"class": "season"})
+            prefixSeason = []
+            for e2 in seasonList:
+                prefixSeason.append(e2.find_next('img').get('src').split('/season/')[1][:-4])
+            tempNameList = []
+            indexCnt = 0
+            for e2 in nameList:
+                nameDict["[" + prefixSeason[indexCnt] + "] " + e2.get_text()] = []
+                tempNameList.append("[" + prefixSeason[indexCnt] + "] " + e2.get_text())
+                indexCnt += 1
 
-        for k in range(1, 7):
-            bpTarget = "span_bp" + str(k)
-            bpAllList = soup.find_all('span', {"class": bpTarget})
-            for idx in range(len(bpAllList)):
-                nameDict[tempNameList[idx]].append(bpAllList[idx].get_text())
+            for idx in range(len(tempOvrList)):
+                nameDict[tempNameList[idx]].append(tempOvrList[idx])
+
+            for k in range(1, 7):
+                bpTarget = "span_bp" + str(k)
+                bpAllList = soup.find_all('span', {"class": bpTarget})
+                for idx in range(len(bpAllList)):
+                    nameDict[tempNameList[idx]].append(bpAllList[idx].get_text())
 
         endTime = time.time()
 
@@ -629,6 +678,7 @@ while True:
         # ----------------------------------------------------------
         allBestCase = []
         nowCnt = 1
+        startTime = time.time()
         for key, value in nameDict.items():
 
             target_prices = [0]
@@ -646,10 +696,11 @@ while True:
                 if i == 1 or i == 4:
                     ratio = 1.04
                 target_prices.append(int(splicedStr) * ratio)
-
+            if seed > 0 and target_prices[1] > seed:
+                continue
             straight = [[0], [0, 0], [0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]]
             notStraight = [0]
-            fee = 0.92
+            fee = tempFee
 
             for i in range(1, maxGrade):
                 effs = []
@@ -776,7 +827,8 @@ while True:
                     straight[4].append([notStraight[4][0], 'one'])
 
             elif maxGrade == 6:
-                if target_prices[3] * fee - straight[1][3][0] + straight[1][2][0] - target_prices[2] > notStraight[2][0]:
+                if target_prices[3] * fee - straight[1][3][0] + straight[1][2][0] - target_prices[2] > notStraight[2][
+                    0]:
                     straight[2].append(
                         [target_prices[3] * fee - straight[1][3][0] + straight[1][2][0] - target_prices[2],
                          'continuous'])  # 2->3
@@ -861,31 +913,79 @@ while True:
             endG = 0
             howMuch = 0
             for i in range(1, maxGrade):
-                for j in range(i + 1, maxGrade + 1):
-                    eff = straight[i][j][0 if i != 1 else 4]
-                    if i == 1 and j == 2:
-                        if straight[1][2][4] > notStraight[1][0]:
-                            eff = straight[1][2][4]
-                        else:
-                            eff = notStraight[1][0]
-                    if maxEff < eff:
-                        maxEff = eff
+                if mode == 2:
+                    howMuch = 'one'
+                    if notStraight[i][0] > maxEff:
+                        maxEff = notStraight[i][0]
                         startG = i
-                        endG = j
-                        if i == 1:
-                            if j == 2:
-                                if straight[1][2][4] > notStraight[1][0]:
-                                    howMuch = 'continuous'
-                                else:
-                                    howMuch = 'one'
+                        endG = i + 1
+                else:
+                    for j in range(i + 1, maxGrade + 1):
+                        eff = straight[i][j][0 if i != 1 else 4]
+                        if i == 1 and j == 2:
+                            if straight[1][2][4] > notStraight[1][0]:
+                                eff = straight[1][2][4]
                             else:
-                                howMuch = 'continuous'
-                        else:
-                            howMuch = straight[i][j][1]
+                                eff = notStraight[1][0]
+                        if maxEff < eff:
+                            maxEff = eff
+                            startG = i
+                            endG = j
+                            if i == 1:
+                                if j == 2:
+                                    if straight[1][2][4] > notStraight[1][0]:
+                                        howMuch = 'continuous'
+                                    else:
+                                        howMuch = 'one'
+                                else:
+                                    howMuch = 'continuous'
+                            else:
+                                howMuch = straight[i][j][1]
 
             print(str(startG) + " => " + str(endG) + " ===> 순이익 : " + str(int(maxEff)) + " 횟수 : " + str(howMuch))
-            allBestCase.append([key, startG, endG, int(maxEff), grade1, target_prices[1], howMuch])
+            effPercent = int(maxEff) / (target_prices[endG] * tempFee - maxEff) if (target_prices[
+                                                                                        endG] * tempFee - maxEff) != 0 else 0
+            allBestCase.append([key, startG, endG, int(maxEff), grade1, target_prices[1], howMuch,
+                                target_prices[endG] * tempFee - maxEff, effPercent])
+
         for e in sorted(allBestCase, key=lambda x: -x[3]):
-            print(e[0] + "(OVR" + str(e[4]) + ") " + str(e[1]) + " => " + str(e[2]) + " 수익 : " + str(e[3]) + "  1카 가격 : {0}".format(str(int(e[5]))))
+            if seed > 0:
+                if seed > e[7]:
+                    print(e[0] + "(OVR" + str(e[4]) + ") " + str(e[1]) + " => " + str(e[2]) + " 수익 : " + str(
+                        e[3]) + "  1카 가격 : {0} 수익% : {1}".format(str(int(e[5])), str(e[8])[:5]))
+            else:
+                print(e[0] + "(OVR" + str(e[4]) + ") " + str(e[1]) + " => " + str(e[2]) + " 수익 : " + str(
+                    e[3]) + "  1카 가격 : {0} 수익% : {1}".format(str(int(e[5])), str(e[8])[:5]))
+        endTime = time.time()
+        print(f"{endTime - startTime:.5f} sec")
+    elif choose == 8:
+        print("시드 입력 ex) 400억 = 4000000")
+        seed = int(input())
+
+    elif choose == 9:
+        print("시즌 입력 0 입력 시 모두 선택, -1 입력 시 종료")
+        print(SeasonDict)
+        tempSeason = []
+        while True:
+            season = input()
+            if season == '-1':
+                break
+            elif season == '0':
+                tempSeason = list(SeasonDict.keys())
+            else:
+                tempSeason.append(season)
+        if len(tempSeason) > 0:
+            strSeason = tempSeason
+    elif choose == 10:
+        print('수수료 쿠폰 입력 없으면 0')
+        searchFee = int(input())
+    elif choose == 11:
+        print('최소 오버롤 입력')
+        searchMinOvr = int(input())
+        print('최대 오버롤 입력')
+        searchMaxOvr = int(input())
+    elif choose == 12:
+        print('모드 입력 1)일반 모드 2)인강, 강화 데이 모드')
+        mode = int(input())
 
 os.system("pause")
